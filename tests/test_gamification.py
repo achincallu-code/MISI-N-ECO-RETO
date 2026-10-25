@@ -3,11 +3,12 @@ import re
 import sqlite3
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from app import create_app
-from app.db import transaction
+from app.db import execute as db_execute, transaction
 
 
 class GamificationTests(unittest.TestCase):
@@ -402,6 +403,69 @@ class GamificationTests(unittest.TestCase):
             )[0],
             0,
         )
+
+    def test_purchase_and_placement_reads_run_inside_their_transactions(self):
+        self.create_action("Acción para comprar decoración")
+        shop_html = self.client.get("/tienda").get_data(as_text=True)
+        form = re.search(
+            r'<form method="post" action="/tienda/comprar/piedra">(.*?)</form>',
+            shop_html,
+            re.DOTALL,
+        ).group(1)
+        token = re.search(
+            r'name="purchase_token" value="([^"]+)"', form
+        ).group(1)
+
+        transaction_active = False
+        database_calls_inside_transaction = []
+
+        @contextmanager
+        def tracked_transaction():
+            nonlocal transaction_active
+            with transaction() as connection:
+                transaction_active = True
+                try:
+                    yield connection
+                finally:
+                    transaction_active = False
+
+        def tracked_execute(sql, params=()):
+            database_calls_inside_transaction.append(transaction_active)
+            return db_execute(sql, params)
+
+        with patch("app.routes.transaction", tracked_transaction):
+            with patch("app.routes.execute", tracked_execute):
+                purchased = self.client.post(
+                    "/tienda/comprar/piedra",
+                    data={"purchase_token": token},
+                )
+                self.assertEqual(purchased.status_code, 302)
+                self.assertEqual(
+                    self.query_one(
+                        """SELECT quantity FROM eco_user_inventory
+                           WHERE item_code = 'piedra'"""
+                    )[0],
+                    1,
+                )
+                database_calls_inside_transaction.clear()
+
+                placed = self.client.post(
+                    "/jardin/colocar/piedra",
+                    data={"position_x": "45", "position_y": "72"},
+                )
+                self.assertEqual(placed.status_code, 302)
+
+        self.assertTrue(database_calls_inside_transaction)
+        self.assertTrue(all(database_calls_inside_transaction))
+        self.assertEqual(
+            self.query_one("SELECT points FROM eco_progress")[0],
+            80,
+        )
+        self.assertEqual(
+            self.query_one("SELECT quantity FROM eco_user_inventory WHERE item_code = 'piedra'")[0],
+            0,
+        )
+        self.assertEqual(self.query_one("SELECT COUNT(*) FROM eco_garden_items")[0], 1)
 
     def test_invalid_garden_position_does_not_consume_inventory(self):
         self.app.config["ACTION_REWARD_POINTS"] = 50

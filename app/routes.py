@@ -262,13 +262,6 @@ def nueva_accion():
 @bp.route("/tienda/comprar/<item_code>", methods=["POST"])
 @login_required
 def comprar_articulo(item_code):
-    item = execute(
-        "SELECT code, title, price FROM eco_store_items WHERE code = ?",
-        (item_code,)
-    ).fetchone()
-    if item is None:
-        abort(404)
-
     token = request.form.get("purchase_token", "").strip()
     if not token or len(token) > 100:
         flash("No se pudo validar la compra. Recarga e inténtalo de nuevo.", "error")
@@ -279,6 +272,12 @@ def comprar_articulo(item_code):
     insufficient_points = False
     try:
         with transaction():
+            item = execute(
+                "SELECT code, title, price FROM eco_store_items WHERE code = ?",
+                (item_code,)
+            ).fetchone()
+            if item is None:
+                abort(404)
             reservation = execute(
                 """INSERT INTO eco_shop_purchases (user_id, token, item_code)
                    VALUES (?, ?, ?)
@@ -341,13 +340,6 @@ def garden_position_from_request():
 @bp.route("/jardin/colocar/<item_code>", methods=["POST"])
 @login_required
 def colocar_articulo_jardin(item_code):
-    item = execute(
-        "SELECT code, title FROM eco_store_items WHERE code = ?",
-        (item_code,)
-    ).fetchone()
-    if item is None:
-        abort(404)
-
     position = garden_position_from_request()
     if position is None:
         return redirect(url_for("main.jardin"))
@@ -355,6 +347,12 @@ def colocar_articulo_jardin(item_code):
 
     user_id = session["user_id"]
     with transaction():
+        item = execute(
+            "SELECT code, title FROM eco_store_items WHERE code = ?",
+            (item_code,)
+        ).fetchone()
+        if item is None:
+            abort(404)
         consumed = execute(
             """UPDATE eco_user_inventory SET quantity = quantity - 1
                WHERE user_id = ? AND item_code = ? AND quantity > 0""",
