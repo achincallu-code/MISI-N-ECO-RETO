@@ -4,8 +4,10 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from app import create_app
+from app.db import transaction
 
 
 class GamificationTests(unittest.TestCase):
@@ -77,6 +79,17 @@ class GamificationTests(unittest.TestCase):
             return connection.execute(sql, params).fetchone()
         finally:
             connection.close()
+
+    def test_postgres_transaction_scope_does_not_close_request_connection(self):
+        connection = MagicMock()
+        transaction_scope = MagicMock()
+        connection.transaction.return_value = transaction_scope
+        with patch("app.db.using_postgres", return_value=True):
+            with patch("app.db.get_db", return_value=connection):
+                with transaction() as active_connection:
+                    self.assertIs(active_connection, connection)
+                connection.transaction.assert_called_once_with()
+                connection.close.assert_not_called()
 
     def test_garden_and_shop_are_separate_pages_and_home_has_navigation_only(self):
         dashboard = self.client.get("/dashboard")

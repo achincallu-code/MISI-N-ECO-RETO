@@ -6,7 +6,7 @@ from flask import (
     Blueprint, flash, redirect, render_template, request, session, url_for, abort
 )
 from werkzeug.security import generate_password_hash, check_password_hash
-from .db import execute, get_db, using_postgres
+from .db import execute, get_db, transaction, using_postgres
 from .progression import (
     GARDEN_LEVELS, garden_level_for_actions, get_garden_action_count,
     get_garden_data, get_store_items, reward_action,
@@ -14,6 +14,11 @@ from .progression import (
 )
 
 bp = Blueprint("main", __name__)
+
+
+class InsufficientPointsError(Exception):
+    pass
+
 
 def current_user():
     user_id = session.get("user_id")
@@ -102,7 +107,7 @@ def logout():
 @bp.route("/dashboard")
 @login_required
 def dashboard():
-    with get_db():
+    with transaction():
         progression = sync_user_progress(session["user_id"])
         achievements = sync_user_achievements(session["user_id"], progression)
 
@@ -143,7 +148,7 @@ def dashboard():
 @bp.route("/jardin")
 @login_required
 def jardin():
-    with get_db():
+    with transaction():
         progression = sync_user_progress(session["user_id"])
         achievements = sync_user_achievements(session["user_id"], progression)
         garden = get_garden_data(session["user_id"])
@@ -158,7 +163,7 @@ def jardin():
 @bp.route("/tienda")
 @login_required
 def tienda():
-    with get_db():
+    with transaction():
         progression = sync_user_progress(session["user_id"])
         store_items = get_store_items(session["user_id"])
     return render_template(
@@ -200,7 +205,7 @@ def nueva_accion():
                 "formulario.html", accion=None, modo="nueva",
                 submission_token=submission_token or secrets.token_urlsafe(32)
             )
-        with get_db():
+        with transaction():
             reservation = execute(
                 """INSERT INTO eco_action_submissions (user_id, token)
                    VALUES (?, ?)
@@ -272,24 +277,23 @@ def comprar_articulo(item_code):
     user_id = session["user_id"]
     duplicate_purchase = False
     insufficient_points = False
-    with get_db() as db:
-        reservation = execute(
-            """INSERT INTO eco_shop_purchases (user_id, token, item_code)
-               VALUES (?, ?, ?)
-               ON CONFLICT (user_id, token) DO NOTHING""",
-            (user_id, token, item_code)
-        )
-        duplicate_purchase = reservation.rowcount == 0
-        if not duplicate_purchase:
-            debit = execute(
-                """UPDATE eco_progress SET points = points - ?
-                   WHERE user_id = ? AND points >= ?""",
-                (item["price"], user_id, item["price"])
+    try:
+        with transaction():
+            reservation = execute(
+                """INSERT INTO eco_shop_purchases (user_id, token, item_code)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT (user_id, token) DO NOTHING""",
+                (user_id, token, item_code)
             )
-            if debit.rowcount != 1:
-                db.rollback()
-                insufficient_points = True
-            else:
+            duplicate_purchase = reservation.rowcount == 0
+            if not duplicate_purchase:
+                debit = execute(
+                    """UPDATE eco_progress SET points = points - ?
+                       WHERE user_id = ? AND points >= ?""",
+                    (item["price"], user_id, item["price"])
+                )
+                if debit.rowcount != 1:
+                    raise InsufficientPointsError
                 execute(
                     """INSERT INTO eco_point_ledger
                        (user_id, source_type, source_code, points_delta,
@@ -304,6 +308,8 @@ def comprar_articulo(item_code):
                            quantity = eco_user_inventory.quantity + 1""",
                     (user_id, item_code)
                 )
+    except InsufficientPointsError:
+        insufficient_points = True
 
     if insufficient_points:
         flash("No tienes suficientes puntos para esa recompensa.", "error")
@@ -348,7 +354,7 @@ def colocar_articulo_jardin(item_code):
     position_x, position_y = position
 
     user_id = session["user_id"]
-    with get_db():
+    with transaction():
         consumed = execute(
             """UPDATE eco_user_inventory SET quantity = quantity - 1
                WHERE user_id = ? AND item_code = ? AND quantity > 0""",
@@ -377,7 +383,7 @@ def mover_articulo_jardin(garden_item_id):
         return redirect(url_for("main.jardin"))
     position_x, position_y = position
 
-    with get_db():
+    with transaction():
         updated = execute(
             """UPDATE eco_garden_items
                SET position_x = ?, position_y = ?

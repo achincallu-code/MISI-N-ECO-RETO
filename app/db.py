@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from contextlib import contextmanager
 from flask import current_app, g
 
 SQLITE_SCHEMA = """
@@ -255,6 +256,18 @@ def get_db():
             g.db.row_factory = sqlite3.Row
             g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
+
+
+@contextmanager
+def transaction():
+    db = get_db()
+    if using_postgres():
+        with db.transaction():
+            yield db
+    else:
+        with db:
+            yield db
+
 
 def execute(sql, params=()):
     """Ejecuta SQL con el controlador configurado y confirma escrituras."""
