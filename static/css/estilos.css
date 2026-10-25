@@ -2056,7 +2056,11 @@ body{
   .logout-form{margin:0}
   .nav-logout{width:auto;padding:7px 9px;font-size:0}
   .nav-logout span{font-size:18px}
-  .topbar{height:46px}
+  .app-shell .topbar{
+    top:54px;
+    z-index:8;
+    height:46px;
+  }
   .page-content{padding-top:16px;padding-bottom:16px}
 }
 
