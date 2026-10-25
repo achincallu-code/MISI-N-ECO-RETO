@@ -98,9 +98,20 @@ class GamificationTests(unittest.TestCase):
         dashboard_html = dashboard.get_data(as_text=True)
         self.assertIn('href="/jardin"', dashboard_html)
         self.assertIn('href="/tienda"', dashboard_html)
+        self.assertIn('href="/misiones"', dashboard_html)
+        self.assertNotIn("Misiones ecológicas", dashboard_html)
+        self.assertNotIn("Logros y distintivos", dashboard_html)
         self.assertNotIn("Mi jardín virtual", dashboard_html)
         self.assertNotIn("Tienda de recompensas", dashboard_html)
         self.assertNotIn("Elige tu próxima recompensa", dashboard_html)
+
+        missions = self.client.get("/misiones")
+        self.assertEqual(missions.status_code, 200)
+        missions_html = missions.get_data(as_text=True)
+        self.assertIn("Misiones ecológicas", missions_html)
+        self.assertIn("Logros y distintivos", missions_html)
+        self.assertIn("Historial de acciones y recompensas", missions_html)
+        self.assertIn('href="/dashboard"', missions_html)
 
         garden = self.client.get("/jardin")
         self.assertEqual(garden.status_code, 200)
@@ -388,8 +399,12 @@ class GamificationTests(unittest.TestCase):
             follow_redirects=True,
         )
         reloaded_dashboard = client.get("/dashboard").get_data(as_text=True)
-        self.assertIn("Jardín con vida", reloaded_dashboard)
+        self.assertNotIn("Jardín con vida", reloaded_dashboard)
         self.assertIn("25", reloaded_dashboard)
+        self.assertIn(
+            "Jardín con vida",
+            client.get("/misiones").get_data(as_text=True),
+        )
         self.assertEqual(self.query_one("SELECT COUNT(*) FROM eco_garden_items")[0], 1)
         self.assertEqual(
             self.query_one(
@@ -662,7 +677,9 @@ class GamificationTests(unittest.TestCase):
             self.create_action(f"Acción {number}")
 
         dashboard = self.client.get("/dashboard").get_data(as_text=True)
-        self.assertIn("Manos a la obra", dashboard)
+        self.assertNotIn("Manos a la obra", dashboard)
+        missions = self.client.get("/misiones").get_data(as_text=True)
+        self.assertIn("Manos a la obra", missions)
         self.assertEqual(
             self.query_one(
                 "SELECT COUNT(*) FROM eco_user_achievements "
@@ -682,7 +699,16 @@ class GamificationTests(unittest.TestCase):
         reloaded_dashboard = client.get("/dashboard").get_data(as_text=True)
         self.assertIn("<strong>1000</strong>", reloaded_dashboard)
         self.assertIn("<strong>1250</strong>", reloaded_dashboard)
-        self.assertIn("Manos a la obra", reloaded_dashboard)
+        self.assertNotIn("Manos a la obra", reloaded_dashboard)
+        self.assertIn(
+            "Manos a la obra",
+            client.get("/misiones").get_data(as_text=True),
+        )
+        self.assertNotIn("Jardín con vida", reloaded_dashboard)
+        self.assertIn(
+            "Jardín con vida",
+            client.get("/misiones").get_data(as_text=True),
+        )
         self.assertEqual(self.query_one("SELECT COUNT(*) FROM acciones")[0], 10)
         self.assertEqual(
             self.query_one(

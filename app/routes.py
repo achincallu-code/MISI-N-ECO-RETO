@@ -174,6 +174,19 @@ def tienda():
     )
 
 
+@bp.route("/misiones")
+@login_required
+def misiones():
+    with transaction():
+        progression = sync_user_progress(session["user_id"])
+        achievements = sync_user_achievements(session["user_id"], progression)
+    return render_template(
+        "misiones.html",
+        progression=progression,
+        achievements=achievements,
+    )
+
+
 def read_action_form():
     titulo = request.form.get("titulo", "").strip()
     categoria = request.form.get("categoria", "").strip()

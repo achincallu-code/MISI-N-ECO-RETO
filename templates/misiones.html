@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Misiones y logros | Misión Eco-Reto{% endblock %}
+{% block content %}
+<section class="section-page-hero">
+  <div>
+    <span class="section-kicker">TU CAMINO ECOLÓGICO</span>
+    <h1>Misiones y logros</h1>
+    <p>Consulta el progreso de tus acciones, las recompensas que recibes y los distintivos que has conseguido.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('main.dashboard') }}">← Volver al inicio</a>
+</section>
+
+<section class="gamification-panel missions-page-panel" aria-labelledby="missions-title">
+  <div class="missions-section" aria-labelledby="missions-title">
+    <div class="missions-heading">
+      <div>
+        <span class="section-kicker">RECOMPENSAS CONTINUAS</span>
+        <h2 id="missions-title">Misiones ecológicas</h2>
+      </div>
+      <span class="mission-count">{{ progression.missions|length }} actividades disponibles · sin límite</span>
+    </div>
+    <div class="mission-grid">
+      {% for mission in progression.missions %}
+      <article class="mission-card">
+        <div class="mission-card-heading">
+          <span class="mission-icon" aria-hidden="true">{{ mission.icon }}</span>
+          <span class="mission-difficulty">Siempre disponible</span>
+        </div>
+        <h3>{{ mission.title }}</h3>
+        <p>{{ mission.description }}</p>
+        <div class="mission-progress-label">
+          <span>Acciones registradas</span>
+          <strong>{{ mission.progress }}</strong>
+        </div>
+        <div class="mission-reward">
+          <span>Por cada nueva acción</span>
+          <strong>＋{{ progression.points_per_action }} puntos · ＋{{ progression.experience_per_action }} XP</strong>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    <details class="reward-history">
+      <summary>Historial de acciones y recompensas (10 más recientes)</summary>
+      {% if progression.history %}
+      <ul>
+        {% for movement in progression.history %}
+        <li>
+          <span><strong>{{ movement.reason }}</strong><small>{{ movement.created_at }}</small></span>
+          <span class="history-reward">+{{ movement.points_delta }} puntos · +{{ movement.experience_delta }} XP</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>Aún no tienes recompensas registradas.</p>
+      {% endif %}
+    </details>
+  </div>
+</section>
+
+<section class="gamification-panel achievements-panel missions-page-panel" aria-labelledby="achievements-title">
+  <div class="gamification-heading">
+    <div>
+      <span class="section-kicker">RECONOCEMOS TU IMPACTO</span>
+      <h2 id="achievements-title">Logros y distintivos</h2>
+      <p>Se desbloquean al alcanzar hitos ecológicos y se guardan en tu cuenta.</p>
+    </div>
+    <span class="garden-count">{{ achievements|selectattr('unlocked')|list|length }} / {{ achievements|length }} desbloqueados</span>
+  </div>
+  <div class="achievement-grid">
+    {% for achievement in achievements %}
+    <article class="achievement-card{% if achievement.unlocked %} unlocked{% else %} locked{% endif %}">
+      <span class="achievement-icon" aria-hidden="true">{{ achievement.icon }}</span>
+      <div>
+        <h3>{{ achievement.title }}</h3>
+        <p>{{ achievement.description }}</p>
+        {% if achievement.unlocked %}
+        <small>Conseguido · {{ achievement.earned_at }}</small>
+        {% else %}
+        <small>Por desbloquear</small>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

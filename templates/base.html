@@ -21,6 +21,7 @@
       <a href="{{ url_for('main.dashboard') }}#inicio" data-section="inicio" title="Inicio" aria-label="Ir al inicio" class="{% if request.endpoint == 'main.dashboard' %}active{% endif %}"><span>⌂</span> Inicio</a>
       <a href="{{ url_for('main.dashboard') }}#acciones" data-section="acciones" title="Mis acciones" aria-label="Ver mis acciones"><span>☘</span> Mis acciones</a>
       <a href="{{ url_for('main.nueva_accion') }}" title="Nueva acción" aria-label="Crear nueva acción" class="{% if request.endpoint == 'main.nueva_accion' %}active{% endif %}"><span>＋</span> Nueva acción</a>
+      <a href="{{ url_for('main.misiones') }}" title="Misiones y logros" aria-label="Ver misiones ecológicas y logros" class="{% if request.endpoint == 'main.misiones' %}active{% endif %}"><span>🏅</span> Misiones y logros</a>
       <a href="{{ url_for('main.jardin') }}" title="Mi jardín" aria-label="Visitar mi jardín" class="{% if request.endpoint == 'main.jardin' %}active{% endif %}"><span>🌱</span> Mi jardín</a>
       <a href="{{ url_for('main.tienda') }}" title="Tienda ecológica" aria-label="Visitar la tienda ecológica" class="{% if request.endpoint == 'main.tienda' %}active{% endif %}"><span>🛒</span> Tienda</a>
       <a href="{{ url_for('main.dashboard') }}#estadisticas" data-section="estadisticas" title="Estadísticas" aria-label="Ver estadísticas"><span>▥</span> Estadísticas</a>
@@ -30,7 +31,7 @@
     </form>
     <div class="sidebar-leaf">🌱</div>
   </aside>
-  <main class="main-area{% if request.endpoint == 'main.dashboard' %} eco-area dashboard-page{% elif request.endpoint in ['main.nueva_accion', 'main.editar_accion', 'main.detalle'] %} eco-area actions-page{% elif request.endpoint in ['main.jardin', 'main.tienda'] %} eco-area gamification-page{% endif %}">
+  <main class="main-area{% if request.endpoint == 'main.dashboard' %} eco-area dashboard-page{% elif request.endpoint in ['main.nueva_accion', 'main.editar_accion', 'main.detalle'] %} eco-area actions-page{% elif request.endpoint in ['main.jardin', 'main.tienda', 'main.misiones'] %} eco-area gamification-page{% endif %}">
     <header class="topbar">
       <span class="mobile-brand">🌿 Misión Eco-Reto</span>
       <div class="account-menu">
