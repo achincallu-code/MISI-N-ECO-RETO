@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Tienda ecológica | Misión Eco-Reto{% endblock %}
+{% block content %}
+<section class="section-page-hero shop-page-hero">
+  <div>
+    <span class="section-kicker">RECOMPENSAS PARA TU JARDÍN</span>
+    <h1>Tienda ecológica</h1>
+    <p>Canjea tus puntos por plantas y decoraciones. Tus compras se guardan en tu inventario.</p>
+  </div>
+  <a class="btn btn-light" href="{{ url_for('main.dashboard') }}">← Volver al inicio</a>
+</section>
+
+<section class="shop-wallet" aria-label="Saldo disponible">
+  <span class="shop-wallet-icon" aria-hidden="true">🌿</span>
+  <div><span>Tu saldo disponible</span><strong>{{ progression.points }} <small>puntos</small></strong></div>
+  <a href="{{ url_for('main.jardin') }}">Ver mi jardín <span aria-hidden="true">→</span></a>
+</section>
+
+<section class="gamification-panel shop-page-panel" aria-labelledby="shop-title">
+  <div class="gamification-heading">
+    <div>
+      <span class="section-kicker">ARTÍCULOS VIRTUALES</span>
+      <h2 id="shop-title">Elige tu próxima recompensa</h2>
+      <p>Los objetos comprados siguen disponibles para colocar en tu jardín.</p>
+    </div>
+    <span class="garden-count">{{ store_items|length }} productos</span>
+  </div>
+  <div class="shop-grid">
+    {% for item in store_items %}
+    <article class="shop-card{% if item.owned_quantity %} shop-card-owned{% endif %}">
+      <span class="shop-item-icon" aria-hidden="true">{{ item.icon }}</span>
+      <div class="shop-item-copy">
+        <span class="shop-category">{{ item.category|capitalize }}</span>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.description }}</p>
+        {% if item.owned_quantity %}
+        <small class="shop-owned-status">✓ Ya tienes {{ item.owned_quantity }} · {{ item.quantity }} por colocar</small>
+        {% else %}
+        <small class="shop-owned-status shop-not-owned">Disponible para desbloquear</small>
+        {% endif %}
+      </div>
+      <div class="shop-buy-row">
+        <strong>{{ item.price }} puntos</strong>
+        <form method="post" action="{{ url_for('main.comprar_articulo', item_code=item.code) }}">
+          <input type="hidden" name="purchase_token" value="{{ shop_tokens[item.code] }}">
+          <button class="eco-small-button" type="submit" {% if progression.points < item.price %}disabled{% endif %}>
+            {% if progression.points < item.price %}Te faltan puntos{% elif item.owned_quantity %}Comprar otro{% else %}Desbloquear{% endif %}
+          </button>
+        </form>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="shop-page-note">
+  <span aria-hidden="true">✨</span>
+  <p>Los puntos y la experiencia por tus nuevas acciones ecológicas siguen acumulándose aunque compres artículos.</p>
+</section>
+{% endblock %}

@@ -1,10 +1,17 @@
 from datetime import date
 from functools import wraps
+import math
+import secrets
 from flask import (
     Blueprint, flash, redirect, render_template, request, session, url_for, abort
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from .db import execute, get_db, using_postgres
+from .progression import (
+    GARDEN_LEVELS, garden_level_for_actions, get_garden_action_count,
+    get_garden_data, get_store_items, reward_action,
+    sync_user_achievements, sync_user_progress,
+)
 
 bp = Blueprint("main", __name__)
 
@@ -95,6 +102,10 @@ def logout():
 @bp.route("/dashboard")
 @login_required
 def dashboard():
+    with get_db():
+        progression = sync_user_progress(session["user_id"])
+        achievements = sync_user_achievements(session["user_id"], progression)
+
     search = request.args.get("q", "").strip()
     categoria = request.args.get("categoria", "").strip().lower()
     params = [session["user_id"]]
@@ -124,8 +135,39 @@ def dashboard():
     energia = cur.fetchone()["total"]
     return render_template(
         "index.html", acciones=acciones, search=search, categoria=categoria, total=total,
-        reciclaje=reciclaje, agua=agua, energia=energia
+        reciclaje=reciclaje, agua=agua, energia=energia, progression=progression,
+        achievements=achievements,
     )
+
+
+@bp.route("/jardin")
+@login_required
+def jardin():
+    with get_db():
+        progression = sync_user_progress(session["user_id"])
+        achievements = sync_user_achievements(session["user_id"], progression)
+        garden = get_garden_data(session["user_id"])
+    return render_template(
+        "jardin.html",
+        garden=garden,
+        progression=progression,
+        achievements=achievements,
+    )
+
+
+@bp.route("/tienda")
+@login_required
+def tienda():
+    with get_db():
+        progression = sync_user_progress(session["user_id"])
+        store_items = get_store_items(session["user_id"])
+    return render_template(
+        "tienda.html",
+        progression=progression,
+        store_items=store_items,
+        shop_tokens={item["code"]: secrets.token_urlsafe(32) for item in store_items},
+    )
+
 
 def read_action_form():
     titulo = request.form.get("titulo", "").strip()
@@ -148,21 +190,206 @@ def read_action_form():
 @login_required
 def nueva_accion():
     if request.method == "POST":
+        submission_token = request.form.get("submission_token", "").strip()
         data, error = read_action_form()
+        if not submission_token or len(submission_token) > 100:
+            error = "No se pudo validar el envío. Vuelve a intentarlo."
         if error:
             flash(error, "error")
-        else:
-            execute(
-                """INSERT INTO acciones
-                   (titulo, categoria, descripcion, propuesto_por, fecha, impacto, usuario_id)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (data["titulo"], data["categoria"], data["descripcion"],
-                 session["username"], data["fecha"], data["impacto"], session["user_id"])
+            return render_template(
+                "formulario.html", accion=None, modo="nueva",
+                submission_token=submission_token or secrets.token_urlsafe(32)
             )
-            commit()
-            flash("Tu acción ecológica se guardó correctamente.", "success")
+        with get_db():
+            reservation = execute(
+                """INSERT INTO eco_action_submissions (user_id, token)
+                   VALUES (?, ?)
+                   ON CONFLICT (user_id, token) DO NOTHING""",
+                (session["user_id"], submission_token)
+            )
+            duplicate_submission = reservation.rowcount == 0
+            if not duplicate_submission:
+                garden_level_before = garden_level_for_actions(
+                    get_garden_action_count(session["user_id"])
+                )
+                action = execute(
+                    """INSERT INTO acciones
+                       (titulo, categoria, descripcion, propuesto_por, fecha, impacto, usuario_id)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)
+                       RETURNING id""",
+                    (data["titulo"], data["categoria"], data["descripcion"],
+                     session["username"], data["fecha"], data["impacto"], session["user_id"])
+                ).fetchone()
+                execute(
+                    """UPDATE eco_action_submissions SET action_id = ?
+                       WHERE user_id = ? AND token = ?""",
+                    (action["id"], session["user_id"], submission_token)
+                )
+                reward = reward_action(
+                    session["user_id"], action["id"], data["titulo"],
+                    data["categoria"], data["descripcion"]
+                )
+                sync_user_progress(session["user_id"])
+                garden_level_after = garden_level_for_actions(
+                    get_garden_action_count(session["user_id"])
+                )
+
+        if duplicate_submission:
+            flash("Este envío ya se había registrado; no se creó otra acción.", "info")
             return redirect(url_for("main.dashboard"))
-    return render_template("formulario.html", accion=None, modo="nueva")
+        message = (
+            f"¡Acción registrada! +{reward['points']} puntos y "
+            f"+{reward['experience']} XP por {reward['mission_title']}."
+        )
+        if reward["leveled_up"]:
+            message += f" ¡Subiste al nivel {reward['level']}!"
+        if garden_level_after > garden_level_before:
+            garden_name = GARDEN_LEVELS[garden_level_after - 1][1]
+            message += f" ¡Tu jardín creció al nivel {garden_level_after}: {garden_name}!"
+        flash(message, "success")
+        return redirect(url_for("main.dashboard"))
+    return render_template(
+        "formulario.html", accion=None, modo="nueva",
+        submission_token=secrets.token_urlsafe(32)
+    )
+
+
+@bp.route("/tienda/comprar/<item_code>", methods=["POST"])
+@login_required
+def comprar_articulo(item_code):
+    item = execute(
+        "SELECT code, title, price FROM eco_store_items WHERE code = ?",
+        (item_code,)
+    ).fetchone()
+    if item is None:
+        abort(404)
+
+    token = request.form.get("purchase_token", "").strip()
+    if not token or len(token) > 100:
+        flash("No se pudo validar la compra. Recarga e inténtalo de nuevo.", "error")
+        return redirect(url_for("main.tienda"))
+
+    user_id = session["user_id"]
+    duplicate_purchase = False
+    insufficient_points = False
+    with get_db() as db:
+        reservation = execute(
+            """INSERT INTO eco_shop_purchases (user_id, token, item_code)
+               VALUES (?, ?, ?)
+               ON CONFLICT (user_id, token) DO NOTHING""",
+            (user_id, token, item_code)
+        )
+        duplicate_purchase = reservation.rowcount == 0
+        if not duplicate_purchase:
+            debit = execute(
+                """UPDATE eco_progress SET points = points - ?
+                   WHERE user_id = ? AND points >= ?""",
+                (item["price"], user_id, item["price"])
+            )
+            if debit.rowcount != 1:
+                db.rollback()
+                insufficient_points = True
+            else:
+                execute(
+                    """INSERT INTO eco_point_ledger
+                       (user_id, source_type, source_code, points_delta,
+                        experience_delta, reason)
+                       VALUES (?, 'shop_purchase', ?, ?, 0, ?)""",
+                    (user_id, token, -item["price"], f"Compra: {item['title']}")
+                )
+                execute(
+                    """INSERT INTO eco_user_inventory (user_id, item_code, quantity)
+                       VALUES (?, ?, 1)
+                       ON CONFLICT (user_id, item_code) DO UPDATE SET
+                           quantity = eco_user_inventory.quantity + 1""",
+                    (user_id, item_code)
+                )
+
+    if insufficient_points:
+        flash("No tienes suficientes puntos para esa recompensa.", "error")
+    elif duplicate_purchase:
+        flash("Esta compra ya se había procesado; no se descontaron puntos otra vez.", "info")
+    else:
+        flash(f"¡Compraste {item['title']} por {item['price']} puntos!", "success")
+    return redirect(url_for("main.tienda"))
+
+
+def garden_position_from_request():
+    try:
+        position_x = float(request.form.get("position_x", ""))
+        position_y = float(request.form.get("position_y", ""))
+    except ValueError:
+        flash("Elige un lugar válido dentro del jardín.", "error")
+        return None
+    if (
+        not math.isfinite(position_x)
+        or not math.isfinite(position_y)
+        or not 5 <= position_x <= 95
+        or not 42 <= position_y <= 88
+    ):
+        flash("Elige un lugar válido dentro de la zona de jardín.", "error")
+        return None
+    return position_x, position_y
+
+
+@bp.route("/jardin/colocar/<item_code>", methods=["POST"])
+@login_required
+def colocar_articulo_jardin(item_code):
+    item = execute(
+        "SELECT code, title FROM eco_store_items WHERE code = ?",
+        (item_code,)
+    ).fetchone()
+    if item is None:
+        abort(404)
+
+    position = garden_position_from_request()
+    if position is None:
+        return redirect(url_for("main.jardin"))
+    position_x, position_y = position
+
+    user_id = session["user_id"]
+    with get_db():
+        consumed = execute(
+            """UPDATE eco_user_inventory SET quantity = quantity - 1
+               WHERE user_id = ? AND item_code = ? AND quantity > 0""",
+            (user_id, item_code)
+        )
+        if consumed.rowcount == 1:
+            execute(
+                """INSERT INTO eco_garden_items
+                   (user_id, item_code, position_x, position_y)
+                   VALUES (?, ?, ?, ?)""",
+                (user_id, item_code, position_x, position_y)
+            )
+
+    if consumed.rowcount != 1:
+        flash("No tienes ese artículo disponible en tu inventario.", "error")
+    else:
+        flash(f"¡Colocaste {item['title']} en el lugar que elegiste!", "success")
+    return redirect(url_for("main.jardin"))
+
+
+@bp.route("/jardin/mover/<int:garden_item_id>", methods=["POST"])
+@login_required
+def mover_articulo_jardin(garden_item_id):
+    position = garden_position_from_request()
+    if position is None:
+        return redirect(url_for("main.jardin"))
+    position_x, position_y = position
+
+    with get_db():
+        updated = execute(
+            """UPDATE eco_garden_items
+               SET position_x = ?, position_y = ?
+               WHERE id = ? AND user_id = ?""",
+            (position_x, position_y, garden_item_id, session["user_id"])
+        )
+    if updated.rowcount != 1:
+        abort(404)
+
+    flash("¡Moviste el objeto a su nueva posición!", "success")
+    return redirect(url_for("main.jardin"))
+
 
 @bp.route("/acciones/<int:action_id>")
 @login_required

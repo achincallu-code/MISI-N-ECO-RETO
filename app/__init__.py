@@ -8,6 +8,10 @@ def create_app():
         "SECRET_KEY", "dev-cambia-esta-clave-antes-de-publicar"
     )
     app.config["DATABASE_URL"] = os.environ.get("DATABASE_URL", "").strip()
+    app.config["ACTION_REWARD_POINTS"] = int(os.environ.get("ECO_ACTION_POINTS", "10"))
+    app.config["ACTION_REWARD_EXPERIENCE"] = int(os.environ.get("ECO_ACTION_EXPERIENCE", "15"))
+    if app.config["ACTION_REWARD_POINTS"] < 0 or app.config["ACTION_REWARD_EXPERIENCE"] < 0:
+        raise ValueError("Las recompensas de acciones no pueden ser negativas.")
     app.config["DATABASE_PATH"] = os.environ.get(
         "DATABASE_PATH", os.path.join(app.instance_path, "eco_reto.db")
     )

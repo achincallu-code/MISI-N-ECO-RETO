@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Mi jardín | Misión Eco-Reto{% endblock %}
+{% block content %}
+<section class="section-page-hero garden-page-hero">
+  <div>
+    <span class="section-kicker">TU ESPACIO NATURAL</span>
+    <h1>Mi jardín virtual</h1>
+    <p>Crece con cada acción ecológica y decóralo con los artículos que hayas conseguido.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('main.dashboard') }}">← Volver al inicio</a>
+</section>
+
+<section class="gamification-panel garden-page-panel" aria-labelledby="garden-title">
+  <div class="gamification-heading">
+    <div>
+      <span class="section-kicker">PROGRESO DE TU JARDÍN</span>
+      <h2 id="garden-title">🌱 Nivel {{ garden.stage }}: {{ garden.stage_name }}</h2>
+      <p>
+        Acciones ecológicas: {{ garden.action_count }}
+        {% if garden.next_actions is not none %}de {{ garden.next_actions }}{% else %}· nivel máximo{% endif %}
+      </p>
+    </div>
+    <div class="garden-page-stats">
+      <span><strong>{{ garden.action_count }}</strong> acciones</span>
+      <span><strong>{{ garden.item_count }}</strong> artículos colocados</span>
+      <span><strong>{{ progression.points }}</strong> puntos disponibles</span>
+    </div>
+  </div>
+
+  <div class="garden-progress" aria-label="Progreso de crecimiento del jardín">
+    <div class="garden-progress-track"
+         role="progressbar"
+         aria-label="Progreso hacia el siguiente nivel del jardín"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         aria-valuenow="{{ garden.progress_percent }}"
+         aria-valuetext="{{ garden.growth_message }}">
+      <span style="width: {{ garden.progress_percent }}%"></span>
+    </div>
+    <p>{{ garden.growth_message }}</p>
+  </div>
+
+  <div class="garden-scene garden-stage-{{ garden.stage }}"
+       style="--garden-scene-height: {{ garden.scene_height }}px; --garden-growth-rows: {{ garden.growth_rows }};"
+       data-garden-placement
+       tabindex="0"
+       role="region"
+       aria-label="Jardín interactivo: {{ garden.stage_name }}. Elige un artículo nuevo o selecciona uno colocado para cambiar su posición.">
+    <img class="garden-landscape" src="{{ url_for('static', filename='images/garden-landscape.svg') }}" alt="" aria-hidden="true">
+    <div class="garden-sparkles" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span></div>
+    <div class="garden-growth" aria-hidden="true">
+      {% for plant in garden.plants %}
+      <span class="garden-plant plant-{{ plant.style }} plant-age-{{ plant.age }}">
+        <span class="plant-canopy"><i></i><i></i><i></i></span>
+        <span class="plant-trunk"></span>
+        <span class="plant-soil"></span>
+      </span>
+      {% endfor %}
+    </div>
+    {% for item in garden["items"] %}
+    <button class="garden-placed-item" type="button"
+            style="--placed-x: {{ item.position_x }}%; --placed-y: {{ item.position_y }}%;"
+            data-garden-item-id="{{ item.id }}"
+            data-garden-item-name="{{ item.title }}"
+            data-move-url="{{ url_for('main.mover_articulo_jardin', garden_item_id=item.id) }}"
+            data-position-x="{{ item.position_x }}"
+            data-position-y="{{ item.position_y }}"
+            aria-pressed="false"
+            aria-label="Seleccionar {{ item.title }} para moverlo">
+      {{ item.icon }}
+    </button>
+    {% endfor %}
+    <span class="garden-placement-marker" data-garden-marker hidden aria-hidden="true">＋</span>
+    <span class="garden-stage-label">Nivel {{ garden.stage }} · {{ garden.stage_name }} · {{ garden.plant_count }} plantas</span>
+  </div>
+
+  <div class="garden-page-inventory">
+    <div class="garden-page-section-heading">
+      <div><h3>Artículos por colocar</h3><p>Elige uno y luego pulsa el lugar exacto en el jardín. Usa las flechas y Enter si prefieres el teclado.</p></div>
+      <a class="eco-small-button" href="{{ url_for('main.tienda') }}">Visitar tienda</a>
+    </div>
+    <div class="garden-placement-controls">
+      <p class="garden-placement-status" data-garden-status role="status" aria-live="polite">Elige un artículo nuevo o selecciona uno ya colocado para moverlo.</p>
+      <button class="eco-small-button garden-move-confirm" type="button" data-garden-move-confirm hidden disabled>Mover objeto a esta posición</button>
+      <button class="eco-small-button garden-placement-cancel" type="button" data-garden-cancel hidden>Cancelar</button>
+      <form class="garden-move-form" method="post" data-garden-move-form hidden>
+        <input type="hidden" name="position_x" value="">
+        <input type="hidden" name="position_y" value="">
+      </form>
+    </div>
+    {% if garden["inventory"] %}
+    <div class="inventory-grid">
+      {% for item in garden["inventory"] %}
+      <article class="inventory-card">
+        <span class="inventory-icon" aria-hidden="true">{{ item.icon }}</span>
+        <div><strong>{{ item.title }}</strong><small>{{ item.quantity }} disponible(s)</small></div>
+        <form class="garden-placement-form" method="post" action="{{ url_for('main.colocar_articulo_jardin', item_code=item.code) }}" data-garden-item="{{ item.title }}">
+          <input type="hidden" name="position_x" value="50">
+          <input type="hidden" name="position_y" value="70">
+          <button class="eco-small-button garden-select-item" type="button" aria-pressed="false">Elegir</button>
+        </form>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gamification-empty">Todavía no tienes artículos por colocar. Visita la tienda para elegir una planta o decoración.</p>
+    {% endif %}
+  </div>
+
+  <div class="garden-page-placed">
+    <div class="garden-page-section-heading">
+      <div><h3>Todo lo que ya colocaste</h3><p>Tus artículos permanecen guardados en el jardín.</p></div>
+    </div>
+    {% if garden["items"] %}
+    <div class="placed-items" aria-label="Artículos colocados en el jardín">
+      {% for item in garden["items"] %}
+      <span title="{{ item.title }}">{{ item.icon }} {{ item.title }}</span>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gamification-empty">Aún no hay artículos colocados. Compra uno en la tienda y añádelo a tu jardín.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="garden-page-footer">
+  <div><span aria-hidden="true">🛒</span><div><strong>¿Quieres añadir algo nuevo?</strong><p>Usa tus puntos para desbloquear más plantas y decoraciones.</p></div></div>
+  <a class="btn btn-primary" href="{{ url_for('main.tienda') }}">Ir a la tienda</a>
+</section>
+{% endblock %}

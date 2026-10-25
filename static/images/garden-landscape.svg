@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#80c9d1"/>
+      <stop offset=".62" stop-color="#c3ead4"/>
+      <stop offset="1" stop-color="#e5f1bd"/>
+    </linearGradient>
+    <linearGradient id="hillBack" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#79ad8b"/>
+      <stop offset="1" stop-color="#477a66"/>
+    </linearGradient>
+    <linearGradient id="hillFront" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#6bbd79"/>
+      <stop offset="1" stop-color="#26744d"/>
+    </linearGradient>
+    <linearGradient id="meadow" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#a0d879"/>
+      <stop offset="1" stop-color="#4e9d59"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#8bd4cc"/>
+      <stop offset="1" stop-color="#4ba99a"/>
+    </linearGradient>
+    <radialGradient id="sunGlow">
+      <stop stop-color="#fff4a6" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#fff4a6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="520" fill="url(#sky)"/>
+  <circle cx="976" cy="96" r="100" fill="url(#sunGlow)"/>
+  <circle cx="976" cy="96" r="31" fill="#ffe58a"/>
+  <path d="M0 208 120 122l93 78 121-132 149 146 116-100 128 105 118-94 120 91 110-76 125 91v91H0z" fill="#d8ead0" opacity=".76"/>
+  <path d="m0 231 118-81 89 85 130-123 108 113 110-88 117 105 114-82 126 94 109-73 99 83v88H0z" fill="url(#hillBack)"/>
+  <path d="M0 268q153-88 305 3t314-4q160-83 301 5t280-21v123H0z" fill="#5b9b69" opacity=".9"/>
+  <path d="M0 318q175-77 358 8t351-10q190-91 491 12v192H0z" fill="url(#hillFront)"/>
+  <path d="M0 384q187-70 381 2t376-1q206-80 443 14v121H0z" fill="url(#meadow)"/>
+  <path d="M840 386q120-30 360 10v124H776q44-49 64-134z" fill="url(#water)" opacity=".86"/>
+  <path d="M866 423q130-21 300 9M837 459q135-19 329 11" fill="none" stroke="#d2f4d8" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+  <ellipse cx="330" cy="413" rx="100" ry="15" fill="#245d3e" opacity=".22" filter="url(#softShadow)"/>
+  <ellipse cx="620" cy="465" rx="200" ry="16" fill="#245d3e" opacity=".18" filter="url(#softShadow)"/>
+  <g fill="#fff" opacity=".75">
+    <circle cx="186" cy="93" r="18"/><circle cx="208" cy="87" r="23"/><circle cx="232" cy="96" r="16"/>
+    <circle cx="704" cy="126" r="14"/><circle cx="724" cy="119" r="20"/><circle cx="746" cy="128" r="14"/>
+  </g>
+  <g fill="#e7f5a6" opacity=".75">
+    <circle cx="122" cy="353" r="4"/><circle cx="151" cy="368" r="3"/><circle cx="515" cy="350" r="4"/>
+    <circle cx="553" cy="377" r="3"/><circle cx="720" cy="363" r="4"/><circle cx="756" cy="376" r="3"/>
+    <circle cx="101" cy="445" r="4"/><circle cx="681" cy="440" r="3"/><circle cx="742" cy="463" r="4"/>
+  </g>
+</svg>

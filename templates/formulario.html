@@ -8,6 +8,7 @@
     <div><h1>{{ 'Editar acción' if modo == 'editar' else 'Nueva acción ecológica' }}</h1><p class="muted">{{ 'Modifica la información de tu acción.' if modo == 'editar' else 'Registra una nueva acción que ayude al planeta.' }}</p></div>
   </div>
   <form method="post" class="action-form" data-validate>
+    {% if modo == 'nueva' %}<input type="hidden" name="submission_token" value="{{ submission_token }}">{% endif %}
     <div class="field-group">
       <label for="titulo">Nombre de la acción <span>*</span></label>
       <input id="titulo" name="titulo" maxlength="80" required value="{{ accion.titulo if accion else '' }}" placeholder="Ej. Cuidar cada gota">

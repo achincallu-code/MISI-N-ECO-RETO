@@ -11,6 +11,14 @@ Aplicación web educativa para registrar y consultar acciones ecológicas. Está
 - Ver el detalle de una acción.
 - Editar y eliminar registros con confirmación.
 - Estadísticas básicas por categoría.
+- Retos ecológicos continuos, sin metas que bloqueen nuevas recompensas.
+- Cada acción nueva otorga puntos y experiencia; el mismo envío no se acredita dos veces.
+- Niveles y progreso consultables desde el tablero.
+- Jardín virtual que evoluciona con las acciones y admite artículos colocados.
+- Logros y distintivos persistentes que se desbloquean al alcanzar hitos.
+- Tienda virtual con compras seguras con puntos e inventario por cuenta.
+- Jardín y tienda en páginas independientes: `/jardin` y `/tienda`.
+- Avisos animados al recibir recompensas y subir de nivel, respetando movimiento reducido.
 - Diseño adaptable a computadora y celular.
 - PostgreSQL/Neon cuando existe `DATABASE_URL`.
 - SQLite local automáticamente cuando no existe `DATABASE_URL`.
@@ -27,12 +35,19 @@ EcoReto/
 ├── app/
 │   ├── __init__.py
 │   ├── db.py
+│   ├── progression.py
 │   └── routes.py
+├── database/
+│   └── neon_schema.sql
+├── tests/
+│   └── test_gamification.py
 ├── templates/
 │   ├── base.html
 │   ├── login.html
 │   ├── registro.html
 │   ├── index.html
+│   ├── jardin.html
+│   ├── tienda.html
 │   ├── formulario.html
 │   ├── detalle.html
 │   └── error.html
@@ -78,7 +93,7 @@ EcoReto/
 1. Crea un proyecto en [Neon](https://neon.tech/).
 2. Copia la cadena de conexión PostgreSQL desde el panel **Connect**.
 3. Define la variable de entorno `DATABASE_URL` con esa cadena. No la escribas en el código ni la subas a GitHub.
-4. Reinicia la aplicación. Al iniciar, crea las tablas `usuarios` y `acciones` si todavía no existen.
+4. Reinicia la aplicación. Al iniciar, crea de forma segura las tablas que falten para usuarios, acciones, misiones y progreso. La actualización no borra usuarios ni acciones existentes.
 
 En PowerShell, para una sesión local:
 
@@ -94,28 +109,14 @@ Sustituye el ejemplo por la URL real de tu base; no compartas esa URL ni la incl
 
 El proyecto conserva los campos principales indicados en la guía (`titulo`, `categoria`, `descripcion`, `propuesto_por`) y agrega `fecha`, `impacto` y `usuario_id` para las pantallas de referencia y para separar las acciones de cada cuenta.
 
-Si prefieres crear las tablas manualmente en el SQL Editor de Neon, puedes ejecutar:
+Los retos ecológicos son continuos: cada acción nueva otorga puntos y experiencia (10 puntos y 15 XP por defecto), sin detener futuras recompensas. Puedes ajustar esos valores con las variables opcionales `ECO_ACTION_POINTS` y `ECO_ACTION_EXPERIENCE` en el entorno local o Render. Cada acreditación se vincula al ID único de la acción y se guarda en el historial del servidor; repetir el mismo envío no duplica el registro ni su premio. Los saldos y niveles se calculan en el servidor. El esquema repetible para Neon está en [`database/neon_schema.sql`](database/neon_schema.sql).
 
-```sql
-CREATE TABLE IF NOT EXISTS usuarios (
-    id BIGSERIAL PRIMARY KEY,
-    username VARCHAR(80) NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+El jardín tiene cinco niveles de crecimiento: Semilla (0 acciones), Brote (3), Jardín en crecimiento (7), Jardín floreciente (12) y Jardín ecológico (20). Los umbrales y la cantidad de plantas de cada nivel se pueden ajustar en `GARDEN_LEVELS`, en `app/progression.py`. El progreso se deriva de acciones registradas y de su historial de recompensas idempotente, por usuario; las acciones repetidas no cuentan de nuevo y borrar una acción de la lista no hace retroceder el jardín. Al llegar al nivel máximo, el usuario sigue acumulando acciones y recompensas. No requiere tablas ni migraciones adicionales; las decoraciones guardadas no se modifican por el crecimiento automático. Los artículos de la tienda se compran con puntos, se conservan en el inventario y se pueden colocar en el jardín; una compra repetida con el mismo token no vuelve a descontar puntos. Los logros se guardan por usuario y se sincronizan también para cuentas con acciones previas. La inicialización local no elimina datos. La actualización de `database/neon_schema.sql` es solo un archivo de esquema para uso manual: no se ejecutó ni se conectó a Neon.
 
-CREATE TABLE IF NOT EXISTS acciones (
-    id BIGSERIAL PRIMARY KEY,
-    titulo VARCHAR(80) NOT NULL,
-    categoria VARCHAR(40) NOT NULL,
-    descripcion TEXT NOT NULL,
-    propuesto_por VARCHAR(100) NOT NULL,
-    fecha DATE,
-    impacto VARCHAR(100) DEFAULT '',
-    usuario_id BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+Las pruebas de gamificación se ejecutan con `python -m unittest discover -s tests -v`.
+Al iniciar sesión, el tablero ofrece botones para abrir `/jardin` y `/tienda`; ambas páginas comparten las mismas funciones de inventario, artículos, puntos y compras.
+
+Si prefieres crear las tablas manualmente, revisa y ejecuta el contenido completo de [`database/neon_schema.sql`](database/neon_schema.sql) en el SQL Editor de Neon. No ejecutes el esquema contra una base de producción sin respaldo y autorización.
 
 ## Publicar con GitHub y Render
 

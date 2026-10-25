@@ -162,6 +162,150 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  const gardenScene = document.querySelector("[data-garden-placement]");
+  if (gardenScene) {
+    const marker = gardenScene.querySelector("[data-garden-marker]");
+    const status = document.querySelector("[data-garden-status]");
+    const placementForms = [...document.querySelectorAll(".garden-placement-form")];
+    const placedItems = [...gardenScene.querySelectorAll(".garden-placed-item")];
+    const moveConfirm = document.querySelector("[data-garden-move-confirm]");
+    const moveForm = document.querySelector("[data-garden-move-form]");
+    const cancelButton = document.querySelector("[data-garden-cancel]");
+    let activeSelection = null;
+    let markerX = 50;
+    let markerY = 70;
+    let hasChosenPosition = false;
+
+    const updatePlacement = (x, y) => {
+      markerX = Math.min(95, Math.max(5, x));
+      markerY = Math.min(88, Math.max(42, y));
+      marker.style.setProperty("--placed-x", `${markerX}%`);
+      marker.style.setProperty("--placed-y", `${markerY}%`);
+      const form = activeSelection.type === "new" ? activeSelection.form : moveForm;
+      form.querySelector('[name="position_x"]').value = markerX.toFixed(2);
+      form.querySelector('[name="position_y"]').value = markerY.toFixed(2);
+      marker.hidden = false;
+    };
+
+    const positionFromPointer = (event) => {
+      const bounds = gardenScene.getBoundingClientRect();
+      updatePlacement(
+        ((event.clientX - bounds.left) / bounds.width) * 100,
+        ((event.clientY - bounds.top) / bounds.height) * 100
+      );
+    };
+
+    const selectPlacement = (selection, x = 50, y = 70) => {
+      activeSelection?.element?.setAttribute("aria-pressed", "false");
+      activeSelection = selection;
+      hasChosenPosition = false;
+      selection.element?.setAttribute("aria-pressed", "true");
+      gardenScene.dataset.placementActive = "true";
+      cancelButton.hidden = false;
+      moveConfirm.hidden = selection.type !== "existing";
+      moveConfirm.disabled = true;
+      if (selection.type === "existing") {
+        moveForm.action = selection.element.dataset.moveUrl;
+        updatePlacement(Number(selection.element.dataset.positionX), Number(selection.element.dataset.positionY));
+        status.textContent = `Seleccionaste ${selection.name}. Elige el nuevo lugar en el jardín y luego pulsa “Mover objeto a esta posición”.`;
+      } else {
+        updatePlacement(x, y);
+        status.textContent = `Colocando ${selection.name}. Pulsa o toca el jardín para elegir el lugar.`;
+      }
+      gardenScene.focus({ preventScroll: true });
+    };
+
+    const cancelPlacement = () => {
+      activeSelection?.element?.setAttribute("aria-pressed", "false");
+      activeSelection = null;
+      hasChosenPosition = false;
+      gardenScene.dataset.placementActive = "false";
+      marker.hidden = true;
+      moveConfirm.hidden = true;
+      moveConfirm.disabled = true;
+      cancelButton.hidden = true;
+      status.textContent = "Elige un artículo nuevo o selecciona uno ya colocado para moverlo.";
+    };
+
+    placementForms.forEach((form) => {
+      form.querySelector(".garden-select-item")?.addEventListener("click", (event) => {
+        selectPlacement({
+          type: "new",
+          name: form.dataset.gardenItem,
+          form,
+          element: event.currentTarget,
+        });
+      });
+    });
+
+    placedItems.forEach((item) => {
+      item.addEventListener("click", (event) => {
+        event.stopPropagation();
+        selectPlacement({
+          type: "existing",
+          name: item.dataset.gardenItemName,
+          element: item,
+        });
+      });
+    });
+
+    gardenScene.addEventListener("pointermove", (event) => {
+      if (activeSelection && event.pointerType !== "touch") positionFromPointer(event);
+    });
+
+    gardenScene.addEventListener("click", (event) => {
+      if (!activeSelection || event.target.closest(".garden-stage-label")) return;
+      positionFromPointer(event);
+      if (activeSelection.type === "new") {
+        activeSelection.form.requestSubmit();
+        return;
+      }
+
+      hasChosenPosition = true;
+      moveConfirm.disabled = false;
+      status.textContent = `Nueva posición elegida para ${activeSelection.name}. Confirma para guardar el movimiento.`;
+    });
+
+    moveConfirm.addEventListener("click", () => {
+      if (activeSelection?.type === "existing" && hasChosenPosition) {
+        moveForm.requestSubmit();
+      }
+    });
+
+    cancelButton.addEventListener("click", cancelPlacement);
+
+    gardenScene.addEventListener("keydown", (event) => {
+      if (!activeSelection) return;
+      const increments = {
+        ArrowUp: [0, -2],
+        ArrowDown: [0, 2],
+        ArrowLeft: [-2, 0],
+        ArrowRight: [2, 0],
+      };
+      if (increments[event.key]) {
+        event.preventDefault();
+        updatePlacement(markerX + increments[event.key][0], markerY + increments[event.key][1]);
+        if (activeSelection.type === "existing") {
+          hasChosenPosition = true;
+          moveConfirm.disabled = false;
+          status.textContent = `Nueva posición elegida para ${activeSelection.name}. Confirma para guardar el movimiento.`;
+        }
+      } else if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        if (activeSelection.type === "new") {
+          activeSelection.form.requestSubmit();
+        } else if (hasChosenPosition) {
+          moveConfirm.focus();
+        } else {
+          status.textContent = "Usa las flechas para elegir primero la nueva posición del objeto.";
+        }
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        cancelPlacement();
+      }
+    });
+  }
+
   document.querySelectorAll(".flash").forEach((message) => {
     window.setTimeout(() => {
       message.classList.add("flash-out");

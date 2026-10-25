@@ -17,6 +17,78 @@
   <a class="btn hero-action" href="{{ url_for('main.nueva_accion') }}"><span aria-hidden="true">＋</span> Registrar acción</a>
 </section>
 
+<section class="feature-shortcuts" aria-label="Explora Misión Eco-Reto">
+  <a class="feature-shortcut garden-shortcut" href="{{ url_for('main.jardin') }}">
+    <span class="feature-shortcut-icon" aria-hidden="true">🌱</span>
+    <span><strong>Mi jardín</strong><small>Visita tu espacio y coloca tus plantas</small></span>
+    <span class="feature-shortcut-arrow" aria-hidden="true">→</span>
+  </a>
+  <a class="feature-shortcut shop-shortcut" href="{{ url_for('main.tienda') }}">
+    <span class="feature-shortcut-icon" aria-hidden="true">🛒</span>
+    <span><strong>Tienda ecológica</strong><small>Canjea puntos por artículos virtuales</small></span>
+    <span class="feature-shortcut-arrow" aria-hidden="true">→</span>
+  </a>
+</section>
+
+<section class="progression-panel" aria-labelledby="progression-title">
+  <div class="progression-overview">
+    <div class="progression-title">
+      <span class="progression-emblem" aria-hidden="true">🌿</span>
+      <div>
+        <span class="section-kicker">TU PROGRESO ECOLÓGICO</span>
+        <h2 id="progression-title">Nivel {{ progression.level }} · {{ progression.level_name }}</h2>
+      </div>
+    </div>
+    <div class="progression-balances">
+      <div><strong>{{ progression.points }}</strong><span>Puntos</span></div>
+      <div><strong>{{ progression.experience }}</strong><span>Experiencia</span></div>
+    </div>
+    <div class="experience-track" role="progressbar" aria-label="Progreso al siguiente nivel"
+         aria-valuemin="0" aria-valuemax="{{ progression.xp_per_level }}" aria-valuenow="{{ progression.level_progress }}">
+      <span style="width: {{ progression.level_progress }}%"></span>
+    </div>
+    <p class="experience-caption">{{ progression.level_progress }} / {{ progression.xp_per_level }} XP para el siguiente nivel</p>
+  </div>
+
+  <div class="missions-section" aria-labelledby="missions-title">
+    <div class="missions-heading">
+      <div><span class="section-kicker">RECOMPENSAS CONTINUAS</span><h2 id="missions-title">Misiones ecológicas</h2></div>
+      <span class="mission-count">{{ progression.missions|length }} actividades disponibles · sin límite</span>
+    </div>
+    <div class="mission-grid">
+      {% for mission in progression.missions %}
+      <article class="mission-card">
+        <div class="mission-card-heading">
+          <span class="mission-icon" aria-hidden="true">{{ mission.icon }}</span>
+          <span class="mission-difficulty">Siempre disponible</span>
+        </div>
+        <h3>{{ mission.title }}</h3>
+        <p>{{ mission.description }}</p>
+        <div class="mission-progress-label">
+          <span>Acciones registradas</span>
+          <strong>{{ mission.progress }}</strong>
+        </div>
+        <div class="mission-reward"><span>Por cada nueva acción</span><strong>＋{{ progression.points_per_action }} puntos · ＋{{ progression.experience_per_action }} XP</strong></div>
+      </article>
+      {% endfor %}
+    </div>
+    <details class="reward-history">
+      <summary>Historial de acciones y recompensas (10 más recientes)</summary>
+      {% if progression.history %}
+      <ul>
+        {% for movement in progression.history %}
+        <li><span><strong>{{ movement.reason }}</strong><small>{{ movement.created_at }}</small></span>
+          <span class="history-reward">+{{ movement.points_delta }} puntos · +{{ movement.experience_delta }} XP</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>Aún no tienes recompensas registradas.</p>
+      {% endif %}
+    </details>
+  </div>
+</section>
+
 <section class="stats-grid" id="estadisticas" aria-label="Estadísticas de mis acciones">
   <a class="stat-card stat-green stat-link" href="{{ url_for('main.dashboard') }}#acciones" aria-label="Ver todas mis acciones">
     <span class="stat-icon">🍃</span><span class="stat-copy"><strong>{{ total }}</strong><span>Acciones registradas</span></span>
@@ -30,6 +102,33 @@
   <a class="stat-card stat-pink stat-link {% if categoria == 'energia' %}selected{% endif %}" href="{{ url_for('main.dashboard', categoria='energia', q=search) }}#acciones" aria-label="Filtrar {{ energia }} acciones de energía" {% if categoria == 'energia' %}aria-current="page"{% endif %}>
     <span class="stat-icon">⚡</span><span class="stat-copy"><strong>{{ energia }}</strong><span>Acciones de energía</span></span>
   </a>
+</section>
+
+<section class="gamification-panel achievements-panel" id="logros" aria-labelledby="achievements-title">
+  <div class="gamification-heading">
+    <div>
+      <span class="section-kicker">RECONOCEMOS TU IMPACTO</span>
+      <h2 id="achievements-title">Logros y distintivos</h2>
+      <p>Se desbloquean al alcanzar hitos ecológicos y se guardan en tu cuenta.</p>
+    </div>
+    <span class="garden-count">{{ achievements|selectattr('unlocked')|list|length }} / {{ achievements|length }} desbloqueados</span>
+  </div>
+  <div class="achievement-grid">
+    {% for achievement in achievements %}
+    <article class="achievement-card{% if achievement.unlocked %} unlocked{% else %} locked{% endif %}">
+      <span class="achievement-icon" aria-hidden="true">{{ achievement.icon }}</span>
+      <div>
+        <h3>{{ achievement.title }}</h3>
+        <p>{{ achievement.description }}</p>
+        {% if achievement.unlocked %}
+        <small>Conseguido · {{ achievement.earned_at }}</small>
+        {% else %}
+        <small>Por desbloquear</small>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
 </section>
 
 <section class="panel" id="acciones">
