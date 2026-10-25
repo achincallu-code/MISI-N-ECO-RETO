@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Inicio | Misión Eco-Reto{% endblock %}
+{% block content %}
+<section class="welcome-row" id="inicio">
+  <span class="hero-orbit hero-orbit-one" aria-hidden="true"></span>
+  <span class="hero-orbit hero-orbit-two" aria-hidden="true"></span>
+  <div class="welcome-copy">
+    <div class="dashboard-greeting">
+      <span class="dashboard-greeting-icon" aria-hidden="true">🍃</span>
+      <div>
+        <span class="hero-label"><span></span> BIENVENIDO A MISIÓN ECO-RETO</span>
+        <h1>¡Hola, {{ usuario_actual.username }}!</h1>
+        <p>Bienvenido a Misión Eco-Reto. Cada acción ayuda a construir un futuro más verde.</p>
+      </div>
+    </div>
+  </div>
+  <a class="btn hero-action" href="{{ url_for('main.nueva_accion') }}"><span aria-hidden="true">＋</span> Registrar acción</a>
+</section>
+
+<section class="stats-grid" id="estadisticas" aria-label="Estadísticas de mis acciones">
+  <a class="stat-card stat-green stat-link" href="{{ url_for('main.dashboard') }}#acciones" aria-label="Ver todas mis acciones">
+    <span class="stat-icon">🍃</span><span class="stat-copy"><strong>{{ total }}</strong><span>Acciones registradas</span></span>
+  </a>
+  <a class="stat-card stat-blue stat-link {% if categoria == 'agua' %}selected{% endif %}" href="{{ url_for('main.dashboard', categoria='agua', q=search) }}#acciones" aria-label="Filtrar {{ agua }} acciones de agua" {% if categoria == 'agua' %}aria-current="page"{% endif %}>
+    <span class="stat-icon">💧</span><span class="stat-copy"><strong>{{ agua }}</strong><span>Acciones de agua</span></span>
+  </a>
+  <a class="stat-card stat-yellow stat-link {% if categoria == 'reciclaje' %}selected{% endif %}" href="{{ url_for('main.dashboard', categoria='reciclaje', q=search) }}#acciones" aria-label="Filtrar {{ reciclaje }} acciones de reciclaje" {% if categoria == 'reciclaje' %}aria-current="page"{% endif %}>
+    <span class="stat-icon">♻️</span><span class="stat-copy"><strong>{{ reciclaje }}</strong><span>Acciones de reciclaje</span></span>
+  </a>
+  <a class="stat-card stat-pink stat-link {% if categoria == 'energia' %}selected{% endif %}" href="{{ url_for('main.dashboard', categoria='energia', q=search) }}#acciones" aria-label="Filtrar {{ energia }} acciones de energía" {% if categoria == 'energia' %}aria-current="page"{% endif %}>
+    <span class="stat-icon">⚡</span><span class="stat-copy"><strong>{{ energia }}</strong><span>Acciones de energía</span></span>
+  </a>
+</section>
+
+<section class="panel" id="acciones">
+  <div class="panel-heading">
+    <div>
+      <span class="section-kicker">TU HISTORIAL</span>
+      <h2>Mis acciones</h2>
+      <p class="muted small">Consulta y administra tus registros.</p>
+      {% if categoria %}<a class="filter-chip" href="{{ url_for('main.dashboard', q=search) }}#acciones">Filtro: {{ {'agua': 'Agua', 'energia': 'Energía', 'reciclaje': 'Reciclaje'}.get(categoria, categoria|capitalize) }} <span aria-hidden="true">×</span></a>{% endif %}
+    </div>
+    <form class="search-form" method="get" action="{{ url_for('main.dashboard') }}">
+      {% if categoria %}<input type="hidden" name="categoria" value="{{ categoria }}">{% endif %}
+      <span aria-hidden="true">⌕</span><input name="q" value="{{ search }}" placeholder="Buscar acción..." aria-label="Buscar acción">
+      {% if search %}<a class="clear-search" href="{{ url_for('main.dashboard', categoria=categoria) if categoria else url_for('main.dashboard') }}" aria-label="Limpiar búsqueda">×</a>{% endif %}
+    </form>
+  </div>
+  {% if acciones %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Acción</th><th>Tipo</th><th>Fecha</th><th>Impacto</th><th>Acciones</th></tr></thead>
+      <tbody>
+      {% for accion in acciones %}
+        <tr>
+          <td class="id-cell">#{{ accion.id }}</td>
+          <td><a class="action-title" href="{{ url_for('main.detalle', action_id=accion.id) }}">{{ accion.titulo }}</a><span class="table-description">{{ accion.descripcion }}</span></td>
+          <td><span class="category-pill cat-{{ accion.categoria|lower|replace(' ', '-')|replace('í','i') }}">{{ accion.categoria }}</span></td>
+          <td>{{ accion.fecha or '—' }}</td>
+          <td>{{ accion.impacto or 'Por registrar' }}</td>
+          <td><div class="table-actions">
+            <a class="icon-btn edit" href="{{ url_for('main.editar_accion', action_id=accion.id) }}" title="Editar" aria-label="Editar">✎</a>
+            <form method="post" action="{{ url_for('main.eliminar_accion', action_id=accion.id) }}" data-confirm="¿Seguro que quieres eliminar esta acción?"><button class="icon-btn delete" type="submit" title="Eliminar" aria-label="Eliminar">⌫</button></form>
+          </div></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-icon">🌱</div><h3>{% if search %}No encontramos resultados{% else %}Todavía no tienes acciones{% endif %}</h3><p>{% if search %}Prueba con otra palabra.{% else %}Registra tu primera acción ecológica y comienza tu misión.{% endif %}</p>{% if not search %}<a class="btn btn-primary" href="{{ url_for('main.nueva_accion') }}">＋ Registrar primera acción</a>{% endif %}</div>
+  {% endif %}
+</section>
+
+<section class="tip-banner"><span class="tip-icon">🌳</span><div><strong>Un pequeño reto, un gran cambio</strong><p>Apagar una luz, ahorrar agua o reutilizar materiales también cuenta. ¡Sigue sumando!</p></div><span class="tip-spark">✦</span></section>
+{% endblock %}

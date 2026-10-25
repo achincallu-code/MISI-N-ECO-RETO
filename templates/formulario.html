@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar acción' if modo == 'editar' else 'Nueva acción' }} | Misión Eco-Reto{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{{ url_for('main.dashboard') }}">Inicio</a><span>›</span><span>{{ 'Editar acción' if modo == 'editar' else 'Nueva acción' }}</span></div>
+<section class="form-panel">
+  <div class="form-panel-header">
+    <div class="large-icon">{{ '✏️' if modo == 'editar' else '🌿' }}</div>
+    <div><h1>{{ 'Editar acción' if modo == 'editar' else 'Nueva acción ecológica' }}</h1><p class="muted">{{ 'Modifica la información de tu acción.' if modo == 'editar' else 'Registra una nueva acción que ayude al planeta.' }}</p></div>
+  </div>
+  <form method="post" class="action-form" data-validate>
+    <div class="field-group">
+      <label for="titulo">Nombre de la acción <span>*</span></label>
+      <input id="titulo" name="titulo" maxlength="80" required value="{{ accion.titulo if accion else '' }}" placeholder="Ej. Cuidar cada gota">
+    </div>
+    <div class="field-group">
+      <label for="categoria">Tipo de acción <span>*</span></label>
+      <select id="categoria" name="categoria" required>
+        <option value="">Selecciona una categoría</option>
+        {% for cat in ['Reciclaje', 'Agua', 'Ahorro de agua', 'Energía', 'Transporte', 'Reutilización', 'Áreas verdes', 'Otra'] %}
+        <option value="{{ cat }}" {% if accion and accion.categoria == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field-group">
+      <label for="descripcion">Descripción <span>*</span></label>
+      <textarea id="descripcion" name="descripcion" rows="4" required maxlength="2000" placeholder="Describe qué hiciste y cómo ayuda al planeta...">{{ accion.descripcion if accion else '' }}</textarea>
+      <small>Explica la acción con tus propias palabras.</small>
+    </div>
+    <div class="form-two-columns">
+      <div class="field-group">
+        <label for="fecha">Fecha</label>
+        <input id="fecha" type="date" name="fecha" value="{{ accion.fecha if accion and accion.fecha else today }}" max="{{ today }}">
+      </div>
+      <div class="field-group">
+        <label for="impacto">Impacto (opcional)</label>
+        <input id="impacto" name="impacto" maxlength="100" value="{{ accion.impacto if accion else '' }}" placeholder="Ej. 5 botellas, 10 litros">
+      </div>
+    </div>
+    <div class="form-actions">
+      <a class="btn btn-light" href="{{ url_for('main.detalle', action_id=accion.id) if accion and modo == 'editar' else url_for('main.dashboard') }}">Cancelar</a>
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if modo == 'editar' else '✓ Guardar acción' }}</button>
+    </div>
+    <p class="required-note">Los campos con * son obligatorios.</p>
+  </form>
+</section>
+{% endblock %}

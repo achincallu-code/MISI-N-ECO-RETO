@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#064e3b">
+  <title>{% block title %}Misión Eco-Reto{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+  <script defer src="{{ url_for('static', filename='js/validacion.js') }}"></script>
+</head>
+<body>
+{% if usuario_actual %}
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('main.dashboard') }}">
+      <span class="brand-icon">🌿</span>
+      <span>Misión<br><strong>Eco-Reto</strong></span>
+    </a>
+    <p class="side-caption">PEQUEÑAS ACCIONES<br>GRANDES CAMBIOS</p>
+    <nav class="nav-menu" aria-label="Navegación principal">
+      <a href="{{ url_for('main.dashboard') }}#inicio" data-section="inicio" title="Inicio" aria-label="Ir al inicio" class="{% if request.endpoint == 'main.dashboard' %}active{% endif %}"><span>⌂</span> Inicio</a>
+      <a href="{{ url_for('main.dashboard') }}#acciones" data-section="acciones" title="Mis acciones" aria-label="Ver mis acciones"><span>☘</span> Mis acciones</a>
+      <a href="{{ url_for('main.nueva_accion') }}" title="Nueva acción" aria-label="Crear nueva acción" class="{% if request.endpoint == 'main.nueva_accion' %}active{% endif %}"><span>＋</span> Nueva acción</a>
+      <a href="{{ url_for('main.dashboard') }}#estadisticas" data-section="estadisticas" title="Estadísticas" aria-label="Ver estadísticas"><span>▥</span> Estadísticas</a>
+    </nav>
+    <form action="{{ url_for('main.logout') }}" method="post" class="logout-form">
+      <button class="nav-logout" type="submit"><span>⇥</span> Cerrar sesión</button>
+    </form>
+    <div class="sidebar-leaf">🌱</div>
+  </aside>
+  <main class="main-area{% if request.endpoint == 'main.dashboard' %} eco-area dashboard-page{% elif request.endpoint in ['main.nueva_accion', 'main.editar_accion', 'main.detalle'] %} eco-area actions-page{% endif %}">
+    <header class="topbar">
+      <span class="mobile-brand">🌿 Misión Eco-Reto</span>
+      <div class="account-menu">
+        <button class="account-menu-toggle" type="button" aria-expanded="false" aria-controls="account-menu-panel" aria-label="Abrir opciones de cuenta">
+          <span class="avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <circle cx="12" cy="8" r="3.5"></circle>
+              <path d="M5.5 20a6.5 6.5 0 0 1 13 0"></path>
+            </svg>
+          </span>
+          <span class="account-menu-name">{{ usuario_actual.username }}</span>
+          <svg class="account-menu-chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="m4 6 4 4 4-4"></path>
+          </svg>
+        </button>
+        <div class="account-menu-panel" id="account-menu-panel" hidden>
+          <div class="account-menu-identity">
+            <span class="account-menu-label">CUENTA ACTIVA</span>
+            <strong>{{ usuario_actual.username }}</strong>
+          </div>
+          <a href="{{ url_for('main.dashboard') }}#inicio">Ir al inicio</a>
+          <a href="{{ url_for('main.nueva_accion') }}">Registrar acción</a>
+          <form action="{{ url_for('main.logout') }}" method="post">
+            <button type="submit">Cerrar sesión <span aria-hidden="true">⇥</span></button>
+          </form>
+        </div>
+      </div>
+    </header>
+    <div class="page-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}<div class="flash-stack">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+    <footer class="footer">Cada pequeña acción cuenta para un planeta más limpio. 🌎</footer>
+  </main>
+</div>
+{% else %}
+  <main class="auth-page">
+    <header class="auth-topbar">
+      <a class="auth-topbar-brand" href="{{ url_for('main.login') }}"><span aria-hidden="true">🌿</span> Eco-Reto</a>
+      {% if request.endpoint == 'main.login' %}
+        <a class="auth-topbar-switch" href="{{ url_for('main.register') }}" data-auth-target="register">¿No tienes cuenta? <strong>Regístrate</strong></a>
+      {% else %}
+        <a class="auth-topbar-switch" href="{{ url_for('main.login') }}" data-auth-target="login">¿Ya tienes cuenta? <strong>Inicia sesión</strong></a>
+      {% endif %}
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<div class="auth-flashes">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    {% block auth_content %}{% endblock %}
+  </main>
+{% endif %}
+</body>
+</html>

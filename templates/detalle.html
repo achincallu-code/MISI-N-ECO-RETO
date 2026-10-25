@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Detalles de acción | Misión Eco-Reto{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{{ url_for('main.dashboard') }}">Mis acciones</a><span>›</span><span>Detalles</span></div>
+<section class="detail-panel">
+  <div class="detail-header"><span class="detail-leaf">🌿</span><div><span class="eyebrow">MI ACCIÓN ECOLÓGICA</span><h1>{{ accion.titulo }}</h1><span class="category-pill">{{ accion.categoria }}</span></div></div>
+  <div class="detail-grid">
+    <div class="detail-main">
+      <h2>Descripción</h2><p class="detail-description">{{ accion.descripcion }}</p>
+      <div class="detail-meta"><div><span>📅</span><div><small>Fecha</small><strong>{{ accion.fecha or 'Sin fecha' }}</strong></div></div><div><span>👤</span><div><small>Registrada por</small><strong>{{ accion.propuesto_por }}</strong></div></div></div>
+      <div class="environment-note"><span>🌎</span><div><strong>Impacto ambiental</strong><p>{{ accion.impacto or 'Cada acción consciente puede contribuir a cuidar nuestros recursos naturales.' }}</p></div></div>
+    </div>
+    <aside class="impact-card"><span class="impact-illustration">🌱</span><small>MI CONTRIBUCIÓN</small><strong>{{ accion.impacto or '¡Sigue sumando!' }}</strong><p>Gracias por ser parte del cambio.</p></aside>
+  </div>
+  <div class="detail-actions"><a class="btn btn-light" href="{{ url_for('main.dashboard') }}">← Volver</a><a class="btn btn-primary" href="{{ url_for('main.editar_accion', action_id=accion.id) }}">✎ Editar acción</a><form method="post" action="{{ url_for('main.eliminar_accion', action_id=accion.id) }}" data-confirm="¿Seguro que quieres eliminar esta acción?"><button class="btn btn-danger" type="submit">Eliminar</button></form></div>
+</section>
+{% endblock %}

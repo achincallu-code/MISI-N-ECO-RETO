@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} | Misión Eco-Reto{% endblock %}
+{% block content %}
+<section class="empty-state error-state"><div class="empty-icon">🌱</div><h1>{{ code }}</h1><h3>{{ message }}</h3><a class="btn btn-primary" href="{{ url_for('main.dashboard') if usuario_actual else url_for('main.login') }}">Volver</a></section>
+{% endblock %}
