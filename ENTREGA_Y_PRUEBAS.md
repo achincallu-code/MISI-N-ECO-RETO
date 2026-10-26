@@ -1,6 +1,6 @@
 # Evidencias de entrega — Misión Eco-Reto
 
-Completa esta hoja después de probar y publicar la aplicación.
+Estado funcional confirmado por el usuario: **las pruebas indicadas funcionan**. Los enlaces y las capturas se dejan pendientes porque no se proporcionaron en esta revisión.
 
 ## Enlaces
 
@@ -12,15 +12,22 @@ Completa esta hoja después de probar y publicar la aplicación.
 
 | Prueba | Resultado observado | Error/corrección |
 |---|---|---|
-| Crear registro | | |
-| Consultar listado | | |
-| Buscar una acción | | |
-| Editar registro | | |
-| Eliminar registro de prueba | | |
-| Verificar registros en Neon | | |
-| Cerrar y volver a abrir la URL | | |
+| Crear registro e iniciar/cerrar sesión | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Consultar listado y buscar una acción | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Crear y editar una acción | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Eliminar registro de prueba | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Recibir puntos y experiencia por acciones válidas | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Evitar recompensas duplicadas al repetir un envío | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Comprar artículos, descontar puntos y conservar el inventario | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Colocar y mover artículos del jardín conservando sus posiciones | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Consultar misiones y logros | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Revisar diseño responsive en celular vertical/horizontal, tableta y computadora | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Verificar registros en Neon | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
+| Cerrar y volver a abrir la URL y comprobar la persistencia | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
 
 ## Capturas por preparar
+
+Las capturas siguen pendientes; no se marcaron como realizadas en esta actualización.
 
 - [ ] Inicio de sesión.
 - [ ] Listado principal.

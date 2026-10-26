@@ -17,9 +17,10 @@ Aplicación web educativa para registrar y consultar acciones ecológicas. Está
 - Jardín virtual que evoluciona con las acciones y admite artículos colocados.
 - Logros y distintivos persistentes que se desbloquean al alcanzar hitos.
 - Tienda virtual con compras seguras con puntos e inventario por cuenta.
-- Jardín y tienda en páginas independientes: `/jardin` y `/tienda`.
+- Páginas independientes para jardín, tienda y misiones/logros: `/jardin`, `/tienda` y `/misiones`.
+- Colocación y movimiento de artículos propios en el jardín, con posiciones guardadas.
 - Avisos animados al recibir recompensas y subir de nivel, respetando movimiento reducido.
-- Diseño adaptable a computadora y celular.
+- Diseño adaptable a computadora, tabletas y celulares en orientación vertical y horizontal.
 - PostgreSQL/Neon cuando existe `DATABASE_URL`.
 - SQLite local automáticamente cuando no existe `DATABASE_URL`.
 
@@ -48,6 +49,7 @@ EcoReto/
 │   ├── index.html
 │   ├── jardin.html
 │   ├── tienda.html
+│   ├── misiones.html
 │   ├── formulario.html
 │   ├── detalle.html
 │   └── error.html
@@ -136,19 +138,26 @@ No subas credenciales, tokens ni la cadena de conexión a GitHub.
 
 ## Pruebas recomendadas
 
-- [ ] Crear una cuenta.
-- [ ] Iniciar sesión y cerrar sesión.
-- [ ] Crear una acción.
-- [ ] Consultar el listado y buscar una acción.
-- [ ] Abrir los detalles.
-- [ ] Editar la acción.
-- [ ] Eliminar una acción de prueba.
-- [ ] Confirmar que los registros creados desde Render aparecen en Neon.
-- [ ] Volver a abrir la URL y verificar la persistencia.
+- [x] Crear una cuenta.
+- [x] Iniciar sesión y cerrar sesión.
+- [x] Crear una acción y recibir puntos y experiencia.
+- [x] Consultar el listado y buscar una acción.
+- [x] Abrir los detalles.
+- [x] Editar la acción.
+- [x] Eliminar una acción de prueba.
+- [x] Verificar que un envío repetido no duplique una acción ni sus recompensas.
+- [x] Verificar el crecimiento del jardín y la persistencia del progreso.
+- [x] Comprar artículos, confirmar el descuento de puntos y conservarlos en el inventario.
+- [x] Colocar artículos nuevos y mover los ya colocados sin consumir inventario adicional.
+- [x] Abrir misiones y logros en su página independiente.
+- [x] Revisar el diseño en celular vertical y horizontal, tableta y computadora.
+- [x] Confirmar que los registros de Render aparecen en Neon y persisten al volver a abrir la URL.
+
+El usuario verificó que las funciones marcadas funcionan. La suite automatizada de gamificación se puede ejecutar con `python -m unittest discover -s tests -v`.
 
 ## Notas
 
 - Este proyecto es una base funcional para que puedas estudiar y mejorar el diseño y las funciones poco a poco.
 - El formulario de registro no tiene verificación por correo ni recuperación de contraseña.
 - La estadística muestra cantidades por categoría; no calcula equivalencias reales de CO₂ o litros ahorrados.
-- Para producción real conviene agregar protección CSRF, límites de intentos de inicio de sesión, pruebas automatizadas y una política de privacidad.
+- Para producción real conviene agregar protección CSRF, límites de intentos de inicio de sesión, ampliar la cobertura de pruebas automatizadas y publicar una política de privacidad.
