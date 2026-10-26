@@ -25,15 +25,24 @@ Estado funcional confirmado por el usuario: **las pruebas indicadas funcionan**.
 | Verificar registros en Neon | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
 | Cerrar y volver a abrir la URL y comprobar la persistencia | Sí, funciona; verificado por el usuario. | Sin errores pendientes reportados. |
 
-## Capturas por preparar
+## Verificaciones confirmadas
 
-Las capturas siguen pendientes; no se marcaron como realizadas en esta actualización.
+Las casillas indican que la función fue probada y confirmada por el usuario; no significan que se haya adjuntado una captura.
 
-- [ ] Inicio de sesión.
-- [ ] Listado principal.
-- [ ] Formulario para agregar una acción.
-- [ ] Edición de una acción.
-- [ ] Confirmación/eliminación.
+- [x] Inicio de sesión.
+- [x] Listado principal.
+- [x] Formulario para agregar una acción.
+- [x] Edición de una acción.
+- [x] Confirmación/eliminación.
+- [x] URL pública de Render.
+- [x] SQL Editor de Neon mostrando registros, sin revelar credenciales.
+
+## Capturas por adjuntar
+
+Las capturas como evidencia visual todavía se deben adjuntar a la entrega.
+
+- [ ] Inicio de sesión y listado principal.
+- [ ] Crear, editar y eliminar una acción.
 - [ ] URL pública de Render.
 - [ ] SQL Editor de Neon mostrando registros, sin revelar credenciales.
 
